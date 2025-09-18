@@ -17,6 +17,19 @@ This project tests LLMs on their ability to:
 - **Automated Validation**: Checks sentence validity using LLM-based evaluation
 - **Score Aggregation**: Runs systematic tests across different graph complexities
 
+## Sample Output
+
+════════════════════════════════════════════════════════════
+AGGREGATED RESULTS
+════════════════════════════════════════════════════════════
+Correct scores (rows: nodes 3-4, columns: edges 3-4):
+  3 nodes: [2, 2]
+  4 nodes: [1, 2]
+
+Total scores (rows: nodes 3-4, columns: edges 3-4):
+  3 nodes: [2, 2]
+  4 nodes: [1, 3]
+  
 ## Project Structure
 
 ```
