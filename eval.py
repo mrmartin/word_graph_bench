@@ -1,7 +1,87 @@
-from call import call
+from call import call, MAX_CONCURRENT_CALLS
 from graph import random_dag, print_dag, get_all_variants_string
 from evaluator import send_test, check_answer, score
+import asyncio
+import concurrent.futures
+import threading
 
+
+def process_single_test(node_idx, edge_idx, num_nodes, num_edges):
+    """Process a single test case and return results."""
+    try:
+        print(f"\nTesting: {num_nodes} nodes, {num_edges} edges...", flush=True)
+        
+        # Create nodes as letters
+        test_nodes = [chr(ord('A') + i) for i in range(num_nodes)]
+        
+        # Generate graph and get path variants
+        test_graph = random_dag(test_nodes, num_edges)
+        test_variants = get_all_variants_string(test_graph)
+        path_count = len([l for l in test_variants.split('\n') if ':' in l and '->' in l])
+        print(f"  Generated {path_count} paths", flush=True)
+        
+        # Send test and check answer (these will use parallel calls internally)
+        print("  Generating sentences & validating...", flush=True)
+        test_answer = send_test(test_variants)
+        test_validation = check_answer(test_variants, test_answer)
+        
+        # Get score
+        correct_count, total_count = score(test_validation)
+        print(f"  Result: {correct_count}/{total_count}", flush=True)
+        
+        return (node_idx, edge_idx, correct_count, total_count)
+        
+    except Exception as e:
+        print(f"  Error: {e}", flush=True)
+        return (node_idx, edge_idx, 0, 0)
+
+def run_parallel_evaluation():
+    """Run the evaluation with parallel processing."""
+    print(f"Starting parallel evaluation with up to {MAX_CONCURRENT_CALLS} concurrent LLM calls...", flush=True)
+    
+    # Prepare test cases
+    test_cases = []
+    for node_idx, num_nodes in enumerate(range(3, 8)):  # 3-7 nodes for manageable size
+        for edge_idx, num_edges in enumerate(range(3, 8)):  # 3-7 edges
+            test_cases.append((node_idx, edge_idx, num_nodes, num_edges))
+    
+    print(f"Total test cases: {len(test_cases)}", flush=True)
+    
+    # Initialize result arrays
+    max_size = 10  # Generous size for results
+    correct_scores = [[0 for _ in range(max_size)] for _ in range(max_size)]
+    total_scores = [[0 for _ in range(max_size)] for _ in range(max_size)]
+    
+    # Process tests using ThreadPoolExecutor to handle the parallel calls
+    with concurrent.futures.ThreadPoolExecutor(max_workers=32) as executor:
+        # Submit all test cases
+        futures = [
+            executor.submit(process_single_test, node_idx, edge_idx, num_nodes, num_edges)
+            for node_idx, edge_idx, num_nodes, num_edges in test_cases
+        ]
+        
+        # Collect results as they complete
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                node_idx, edge_idx, correct_count, total_count = future.result()
+                correct_scores[node_idx][edge_idx] = correct_count
+                total_scores[node_idx][edge_idx] = total_count
+            except Exception as e:
+                print(f"Future error: {e}", flush=True)
+    
+    # Display results
+    print("\n" + "═" * 60, flush=True)
+    print("AGGREGATED RESULTS", flush=True)
+    print("═" * 60, flush=True)
+    print("Correct scores (first 5x5):", flush=True)
+    for i in range(5):
+        row = correct_scores[i][:5]
+        print(f"  {i+3} nodes: {row}", flush=True)
+    
+    print("\nTotal scores (first 5x5):", flush=True)
+    for i in range(5):
+        row = total_scores[i][:5]
+        print(f"  {i+3} nodes: {row}", flush=True)
 
 def main():
     """Complete evaluation with LLM call, DAG generation, sentence creation, and validation."""
@@ -42,57 +122,11 @@ def main():
     print(f"Score: correct {correct} out of {total}", flush=True)
     
     print("\n" + "═" * 80, flush=True)
-    print("Score Aggregator: Testing combinations (3-4 nodes × 3-4 edges)", flush=True)
+    print("Score Aggregator: Testing combinations with parallel processing", flush=True)
     print("═" * 80, flush=True)
     
-    for loop_counter in range(1,100):
-        # Initialize 2D arrays for results
-        correct_scores = [[0 for _ in range(30)] for _ in range(30)]
-        total_scores = [[0 for _ in range(30)] for _ in range(30)]
-        
-        for node_idx, num_nodes in enumerate(range(2, 30)):  # 3, 4 nodes
-            for edge_idx, num_edges in enumerate(range(node_idx, 30)):  # 3, 4 edges
-                print(f"\nTesting: {num_nodes} nodes, {num_edges} edges...", flush=True)
-                
-                try:
-                    # Create nodes as letters
-                    test_nodes = [chr(ord('A') + i) for i in range(num_nodes)]
-                    
-                    # Generate graph and get path variants
-                    test_graph = random_dag(test_nodes, num_edges)
-                    test_variants = get_all_variants_string(test_graph)
-                    path_count = len([l for l in test_variants.split('\n') if ':' in l and '->' in l])
-                    print(f"  Generated {path_count} paths", flush=True)
-                    
-                    # Send test and check answer
-                    print("  Generating sentences...", end="", flush=True)
-                    test_answer = send_test(test_variants)
-                    print(" Validating...", end="", flush=True)
-                    test_validation = check_answer(test_variants, test_answer)
-                    
-                    # Get score and store in arrays
-                    correct_count, total_count = score(test_validation)
-                    correct_scores[node_idx][edge_idx] = correct_count
-                    total_scores[node_idx][edge_idx] = total_count
-                    
-                    print(f" Result: {correct_count}/{total_count}", flush=True)
-                    
-                except Exception as e:
-                    print(f"  Error: {e}", flush=True)
-                    correct_scores[node_idx][edge_idx] = 0
-                    total_scores[node_idx][edge_idx] = 0
-        
-        print("\n" + "═" * 60, flush=True)
-        print("AGGREGATED RESULTS", flush=True)
-        print("═" * 60, flush=True)
-        print("Correct scores:", flush=True)
-        for i, row in enumerate(correct_scores):
-            print(f"  {i+3} nodes: {row}", flush=True)
-        
-        print("\nTotal scores:", flush=True)
-        for i, row in enumerate(total_scores):
-            print(f"  {i+3} nodes: {row}", flush=True)
-
+    # Run parallel evaluation
+    run_parallel_evaluation()
 
 if __name__ == "__main__":
     main()

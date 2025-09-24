@@ -73,6 +73,10 @@ This runs:
 
 Edit `call.py` to configure LLM settings:
 ```python
+# Concurrency control
+MAX_CONCURRENT_CALLS = 16                     # Max parallel LLM requests
+
+# API settings
 base_url = "https://chat.martintech.co.uk/v1"  # Your API endpoint
 model = "qwen32-awq"                          # Model name
 ```

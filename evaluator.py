@@ -26,7 +26,7 @@ def check_answer(test, answer):
 And this answer:
 {answer}
 
-For each numbered path in the test, determine if the answer provides a valid English sentence that follows that exact path structure. Return a JSON array of {num_paths} boolean values (true/false), where each boolean corresponds to whether the path at that position has a valid sentence.
+For each numbered path in the test, determine if the answer provides a valid English sentence that follows that exact path structure. Be very strict, do not be linient. Return a JSON array of {num_paths} boolean values (true/false), where each boolean corresponds to whether the path at that position has a valid sentence.
 
 Example format: [{", ".join(["true"] * num_paths)}]
 
