@@ -7,7 +7,7 @@ def call(prompt: str, json_output: bool = False) -> str:
     try:
         # Create synchronous OpenAI client
         client = openai.OpenAI(
-            base_url="https://chat.martintech.co.uk/v1",
+            base_url="http://localhost:8000/v1",#"https://chat.martintech.co.uk/v1",
             api_key="EMPTY",
             timeout=600.0
         )
@@ -27,7 +27,7 @@ def call(prompt: str, json_output: bool = False) -> str:
             model="qwen32-awq",
             messages=messages,
             temperature=0.0,
-            max_tokens=2000
+            max_tokens=20000
         )
         return response.choices[0].message.content
         

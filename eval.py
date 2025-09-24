@@ -45,52 +45,53 @@ def main():
     print("Score Aggregator: Testing combinations (3-4 nodes × 3-4 edges)", flush=True)
     print("═" * 80, flush=True)
     
-    # Initialize 2D arrays for results (2x2 grid for nodes 3-4 and edges 3-4)
-    correct_scores = [[0 for _ in range(2)] for _ in range(2)]
-    total_scores = [[0 for _ in range(2)] for _ in range(2)]
-    
-    for node_idx, num_nodes in enumerate(range(3, 5)):  # 3, 4 nodes
-        for edge_idx, num_edges in enumerate(range(3, 5)):  # 3, 4 edges
-            print(f"\nTesting: {num_nodes} nodes, {num_edges} edges...", flush=True)
-            
-            try:
-                # Create nodes as letters
-                test_nodes = [chr(ord('A') + i) for i in range(num_nodes)]
+    for loop_counter in range(1,100):
+        # Initialize 2D arrays for results
+        correct_scores = [[0 for _ in range(30)] for _ in range(30)]
+        total_scores = [[0 for _ in range(30)] for _ in range(30)]
+        
+        for node_idx, num_nodes in enumerate(range(2, 30)):  # 3, 4 nodes
+            for edge_idx, num_edges in enumerate(range(node_idx, 30)):  # 3, 4 edges
+                print(f"\nTesting: {num_nodes} nodes, {num_edges} edges...", flush=True)
                 
-                # Generate graph and get path variants
-                test_graph = random_dag(test_nodes, num_edges)
-                test_variants = get_all_variants_string(test_graph)
-                path_count = len([l for l in test_variants.split('\n') if ':' in l and '->' in l])
-                print(f"  Generated {path_count} paths", flush=True)
-                
-                # Send test and check answer
-                print("  Generating sentences...", end="", flush=True)
-                test_answer = send_test(test_variants)
-                print(" Validating...", end="", flush=True)
-                test_validation = check_answer(test_variants, test_answer)
-                
-                # Get score and store in arrays
-                correct_count, total_count = score(test_validation)
-                correct_scores[node_idx][edge_idx] = correct_count
-                total_scores[node_idx][edge_idx] = total_count
-                
-                print(f" Result: {correct_count}/{total_count}", flush=True)
-                
-            except Exception as e:
-                print(f"  Error: {e}", flush=True)
-                correct_scores[node_idx][edge_idx] = 0
-                total_scores[node_idx][edge_idx] = 0
-    
-    print("\n" + "═" * 60, flush=True)
-    print("AGGREGATED RESULTS", flush=True)
-    print("═" * 60, flush=True)
-    print("Correct scores (rows: nodes 3-4, columns: edges 3-4):", flush=True)
-    for i, row in enumerate(correct_scores):
-        print(f"  {i+3} nodes: {row}", flush=True)
-    
-    print("\nTotal scores (rows: nodes 3-4, columns: edges 3-4):", flush=True)
-    for i, row in enumerate(total_scores):
-        print(f"  {i+3} nodes: {row}", flush=True)
+                try:
+                    # Create nodes as letters
+                    test_nodes = [chr(ord('A') + i) for i in range(num_nodes)]
+                    
+                    # Generate graph and get path variants
+                    test_graph = random_dag(test_nodes, num_edges)
+                    test_variants = get_all_variants_string(test_graph)
+                    path_count = len([l for l in test_variants.split('\n') if ':' in l and '->' in l])
+                    print(f"  Generated {path_count} paths", flush=True)
+                    
+                    # Send test and check answer
+                    print("  Generating sentences...", end="", flush=True)
+                    test_answer = send_test(test_variants)
+                    print(" Validating...", end="", flush=True)
+                    test_validation = check_answer(test_variants, test_answer)
+                    
+                    # Get score and store in arrays
+                    correct_count, total_count = score(test_validation)
+                    correct_scores[node_idx][edge_idx] = correct_count
+                    total_scores[node_idx][edge_idx] = total_count
+                    
+                    print(f" Result: {correct_count}/{total_count}", flush=True)
+                    
+                except Exception as e:
+                    print(f"  Error: {e}", flush=True)
+                    correct_scores[node_idx][edge_idx] = 0
+                    total_scores[node_idx][edge_idx] = 0
+        
+        print("\n" + "═" * 60, flush=True)
+        print("AGGREGATED RESULTS", flush=True)
+        print("═" * 60, flush=True)
+        print("Correct scores:", flush=True)
+        for i, row in enumerate(correct_scores):
+            print(f"  {i+3} nodes: {row}", flush=True)
+        
+        print("\nTotal scores:", flush=True)
+        for i, row in enumerate(total_scores):
+            print(f"  {i+3} nodes: {row}", flush=True)
 
 
 if __name__ == "__main__":
