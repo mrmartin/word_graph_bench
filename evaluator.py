@@ -41,7 +41,13 @@ def score(validation_json):
     try:
         # Parse the JSON string if it's a string
         if isinstance(validation_json, str):
-            validation_data = json.loads(validation_json.strip())
+            # Extract JSON array pattern [true, false, ...] from markdown or text
+            match = re.search(r'\[\s*(?:true|false)(?:\s*,\s*(?:true|false))*\s*\]', validation_json, re.IGNORECASE | re.DOTALL)
+            if match:
+                validation_data = json.loads(match.group(0).lower())
+            else:
+                clean_json = re.sub(r'```(?:json)?\s*(.*?)\s*```', r'\1', validation_json, flags=re.DOTALL).strip()
+                validation_data = json.loads(clean_json)
         else:
             validation_data = validation_json
         

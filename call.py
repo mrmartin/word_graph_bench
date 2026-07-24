@@ -27,10 +27,14 @@ def _initialize_async_components():
             # Create semaphore to limit concurrent requests
             _semaphore = asyncio.Semaphore(MAX_CONCURRENT_CALLS)
             
+            import os
+            base_url = os.getenv("OPENAI_BASE_URL", "https://api.koscompute.com/v1")
+            api_key = os.getenv("OPENAI_API_KEY", "sk-y2apQ2ytwCM7by__0YoVgR1AyBrL24t1")
+            
             # Create async OpenAI client
             _client = openai.AsyncOpenAI(
-                base_url="https://chat.martintech.co.uk/v1",#http://localhost:8000/v1
-                api_key="EMPTY",
+                base_url=base_url,
+                api_key=api_key,
                 timeout=600.0
             )
             
@@ -46,6 +50,9 @@ def _initialize_async_components():
 async def _async_call(prompt: str, json_output: bool = False, call_id: int = 0) -> str:
     """Async implementation with semaphore for concurrency control."""
     global _semaphore, _client
+    
+    import os
+    model_name = os.getenv("OPENAI_MODEL", "qwen/qwen3.6-27b-nvfp4")
     
     print(f"[{call_id}] Waiting for slot...", end="", flush=True)
     async with _semaphore:  # Limit to 16 concurrent requests
@@ -63,10 +70,11 @@ async def _async_call(prompt: str, json_output: bool = False, call_id: int = 0) 
             
             # Make async request
             response = await _client.chat.completions.create(
-                model="qwen32-awq",
+                model=model_name,
                 messages=messages,
                 temperature=0.0,
-                max_tokens=20000
+                max_tokens=20000,
+                extra_body={"thinking": {"type": "disabled"}}
             )
             
             print(f" done!", flush=True)
